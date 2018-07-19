@@ -59,3 +59,12 @@ def path_data(name):
 	return os.path.abspath(os.path.join(DATHOME, name))
 
 
+#----------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------
+if __name__ == '__main__':
+	def test1():
+		print(path_data('output'))
+		return 0
+	test1()
+
