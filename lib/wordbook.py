@@ -134,7 +134,7 @@ class WordBook (object):
 
 	# 注册新单词
 	def register (self, word, items, commit = True):
-		sql = 'INSERT INTO wordbook(word, ctime) VALUES(?, Now())'
+		sql = 'INSERT INTO wordbook(word) VALUES(?)'
 		try:
 			self.__conn.execute(sql, (word,))
 		except sqlite3.IntegrityError as e:
@@ -194,19 +194,66 @@ class WordBook (object):
 		c = self.__conn.cursor()
 		sql = 'select "id", "word" from "wordbook"'
 		sql += ' WHERE mode = ?'
-		sql += ' order by "atime";'
+		sql += ' order by "id";'
 		c.execute(sql, (mode,))
 		return c.__iter__()
 
 	# 按照时间区域选择
-	def select_atime (mode, since = None, to = None):
+	def select_atime (self, mode, since = None, to = None):
+		c = self.__conn.cursor()
+		sql = 'select "id", "word" from "wordbook"'
+		name = ['mode = ?']
+		cond = [mode]
+		if since is not None:
+			name.append('atime >= ?')
+			cond.append(since)
+		if to is not None:
+			name.append('atime < ?')
+			cond.append(to)
+		sql += ' WHERE ' + ' and '.join(name)
+		sql += ' order by "id";'
+		c.execute(sql, tuple(cond))
 		return c.__iter__()
+
+	# 按照时间区域选择
+	def select_mtime (self, mode, since = None, to = None):
+		c = self.__conn.cursor()
+		sql = 'select "id", "word" from "wordbook"'
+		name = ['mode = ?']
+		cond = [mode]
+		if since is not None:
+			name.append('mtime >= ?')
+			cond.append(since)
+		if to is not None:
+			name.append('mtime < ?')
+			cond.append(to)
+		sql += ' WHERE ' + ' and '.join(name)
+		sql += ' order by "id";'
+		c.execute(sql, tuple(cond))
+		return c.__iter__()
+
+	# 清空数据库
+	def delete_all (self, reset_id = False):
+		sql1 = 'DELETE FROM wordbook;'
+		sql2 = "UPDATE sqlite_sequence SET seq = 0 WHERE name = 'wordbook';"
+		try:
+			self.__conn.execute(sql1)
+			if reset_id:
+				self.__conn.execute(sql2)
+			self.__conn.commit()
+		except sqlite3.IntegrityError as e:
+			self.out(str(e))
+			return False
+		except sqlite3.Error as e:
+			self.out(str(e))
+			return False
+		return True
 
 	# 浏览词典
 	def __iter__ (self):
 		c = self.__conn.cursor()
 		sql = 'select "id", "word" from "wordbook"'
-		sql += ' order by "atime";'
+		sql += ' order by "id";'
 		c.execute(sql)
 		return c.__iter__()
 
@@ -232,8 +279,8 @@ class WordBook (object):
 		return True
 
 	# 取得所有单词
-	def dumps (self):
-		return [ n for _, n in self.__iter__() ]
+	def dumps (self, mode):
+		return [ n for _, n in self.select(mode) ]
 
 
 
@@ -244,6 +291,7 @@ class WordBook (object):
 if __name__ == '__main__':
 	def test1():
 		ws = WordBook("test.db")
+		ws.delete_all()
 		return 0
 	test1()
 
