@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #======================================================================
 #
-# wordbook.py - 
+# wordbank.py - 
 #
 # Created by skywind on 2018/07/19
 # Last Modified: 2018/07/19 20:30:52
@@ -35,9 +35,9 @@ if sys.version_info[0] >= 3:
 
 
 #----------------------------------------------------------------------
-# WordBook
+# WordBank
 #----------------------------------------------------------------------
-class WordBook (object):
+class WordBank (object):
 
 	def __init__ (self, filename, verbose = False):
 		self.__dbname = os.path.abspath(filename)
@@ -47,7 +47,7 @@ class WordBook (object):
 
 	def __open(self):
 		sql = '''
-		CREATE TABLE IF NOT EXISTS "wordbook" (
+		CREATE TABLE IF NOT EXISTS "wordbank" (
 			"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 			"word" VARCHAR(64) COLLATE NOCASE NOT NULL UNIQUE,
 			"mode" INTEGER DEFAULT(0),
@@ -56,10 +56,10 @@ class WordBook (object):
 			"mtime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			"ctime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
-		CREATE UNIQUE INDEX IF NOT EXISTS "wordbook_1" ON wordbook (id);
-		CREATE UNIQUE INDEX IF NOT EXISTS "wordbook_2" ON wordbook (word);
-		CREATE INDEX IF NOT EXISTS "wordbook_3" ON wordbook (mode);
-		CREATE INDEX IF NOT EXISTS "wordbook_4" ON wordbook (atime);
+		CREATE UNIQUE INDEX IF NOT EXISTS "wordbank_1" ON wordbank (id);
+		CREATE UNIQUE INDEX IF NOT EXISTS "wordbank_2" ON wordbank (word);
+		CREATE INDEX IF NOT EXISTS "wordbank_3" ON wordbank (mode);
+		CREATE INDEX IF NOT EXISTS "wordbank_4" ON wordbank (atime);
 		'''
 		
 		self.__conn = sqlite3.connect(self.__dbname, isolation_level = 'IMMEDIATE')
@@ -110,14 +110,14 @@ class WordBook (object):
 		record = None
 		if isinstance(key, int) or isinstance(key, long):
 			if mode is None:
-				c.execute('select * from wordbook where id = ?;', (key,))
+				c.execute('select * from wordbank where id = ?;', (key,))
 			else:
-				c.execute('select * from wordbook where id = ? and mode = ?;', (key, mode))
+				c.execute('select * from wordbank where id = ? and mode = ?;', (key, mode))
 		elif isinstance(key, str) or isinstance(key, unicode):
 			if mode is None:
-				c.execute('select * from wordbook where word = ?', (key,))
+				c.execute('select * from wordbank where word = ?', (key,))
 			else:
-				c.execute('select * from wordbook where word = ? and mode = ?;', (key, mode))
+				c.execute('select * from wordbank where word = ? and mode = ?;', (key, mode))
 		else:
 			return None
 		record = c.fetchone()
@@ -127,15 +127,15 @@ class WordBook (object):
 	def count (self, mode = None):
 		c = self.__conn.cursor()
 		if mode is None:
-			c.execute('select count(*) from wordbook;')
+			c.execute('select count(*) from wordbank;')
 		else:
-			c.execute('select count(*) from wordbook where mode = ?;', (mode,))
+			c.execute('select count(*) from wordbank where mode = ?;', (mode,))
 		record = c.fetchone()
 		return record[0]
 
 	# 注册新单词
 	def register (self, word, items, commit = True):
-		sql = 'INSERT INTO wordbook(word) VALUES(?)'
+		sql = 'INSERT INTO wordbank(word) VALUES(?)'
 		try:
 			self.__conn.execute(sql, (word,))
 		except sqlite3.IntegrityError as e:
@@ -150,9 +150,9 @@ class WordBook (object):
 	# 删除单词
 	def remove (self, key, commit = True):
 		if isinstance(key, int) or isinstance(key, long):
-			sql = 'DELETE FROM wordbook WHERE id=?;'
+			sql = 'DELETE FROM wordbank WHERE id=?;'
 		else:
-			sql = 'DELETE FROM wordbook WHERE word=?;'
+			sql = 'DELETE FROM wordbank WHERE word=?;'
 		try:
 			self.__conn.execute(sql, (key,))
 			if commit:
@@ -177,7 +177,7 @@ class WordBook (object):
 				except sqlite3.IntegrityError:
 					return False
 			return False
-		sql = 'UPDATE wordbook SET ' + ', '.join(['%s=?'%n for n in names])
+		sql = 'UPDATE wordbank SET ' + ', '.join(['%s=?'%n for n in names])
 		if isinstance(key, str) or isinstance(key, unicode):
 			sql += ' WHERE word=?;'
 		else:
@@ -193,7 +193,7 @@ class WordBook (object):
 	# 选择单词
 	def select (self, mode):
 		c = self.__conn.cursor()
-		sql = 'select "id", "word" from "wordbook"'
+		sql = 'select "id", "word" from "wordbank"'
 		sql += ' WHERE mode = ?'
 		sql += ' order by "id";'
 		c.execute(sql, (mode,))
@@ -202,7 +202,7 @@ class WordBook (object):
 	# 按照时间区域选择
 	def select_atime (self, mode, since = None, to = None):
 		c = self.__conn.cursor()
-		sql = 'select "id", "word" from "wordbook"'
+		sql = 'select "id", "word" from "wordbank"'
 		name = ['mode = ?']
 		cond = [mode]
 		if since is not None:
@@ -219,7 +219,7 @@ class WordBook (object):
 	# 按照时间区域选择
 	def select_mtime (self, mode, since = None, to = None):
 		c = self.__conn.cursor()
-		sql = 'select "id", "word" from "wordbook"'
+		sql = 'select "id", "word" from "wordbank"'
 		name = ['mode = ?']
 		cond = [mode]
 		if since is not None:
@@ -235,8 +235,8 @@ class WordBook (object):
 
 	# 清空数据库
 	def delete_all (self, reset_id = False):
-		sql1 = 'DELETE FROM wordbook;'
-		sql2 = "UPDATE sqlite_sequence SET seq = 0 WHERE name = 'wordbook';"
+		sql1 = 'DELETE FROM wordbank;'
+		sql2 = "UPDATE sqlite_sequence SET seq = 0 WHERE name = 'wordbank';"
 		try:
 			self.__conn.execute(sql1)
 			if reset_id:
@@ -253,7 +253,7 @@ class WordBook (object):
 	# 浏览词典
 	def __iter__ (self):
 		c = self.__conn.cursor()
-		sql = 'select "id", "word" from "wordbook"'
+		sql = 'select "id", "word" from "wordbank"'
 		sql += ' order by "id";'
 		c.execute(sql)
 		return c.__iter__()
@@ -301,13 +301,14 @@ class WordBook (object):
 #----------------------------------------------------------------------
 if __name__ == '__main__':
 	def test1():
-		ws = WordBook("test.db")
+		ws = WordBank("test.db")
 		ws.delete_all()
 		ws.register('fuck', {})
 		ws.register('you', {})
 		ws.register('asshole', {})
 		ws.move('asshole', 2)
-		print(ws.dumps(1))
+		print(ws.dumps(0))
 		return 0
 	test1()
+
 
