@@ -13,6 +13,7 @@ import sys
 import time
 import os
 import io
+import datetime
 import sqlite3
 
 try:
@@ -51,9 +52,9 @@ class WordBook (object):
 			"word" VARCHAR(64) COLLATE NOCASE NOT NULL UNIQUE,
 			"mode" INTEGER DEFAULT(0),
 			"score" INTEGER DEFAULT(0),
-			"atime" DATETIME NOT NULL DEFAULT (datetime('now','localtime')),
-			"mtime" DATETIME NOT NULL DEFAULT (datetime('now','localtime')),
-			"ctime" DATETIME NOT NULL DEFAULT (datetime('now','localtime'))
+			"atime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			"mtime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			"ctime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
 		CREATE UNIQUE INDEX IF NOT EXISTS "wordbook_1" ON wordbook (id);
 		CREATE UNIQUE INDEX IF NOT EXISTS "wordbook_2" ON wordbook (word);
@@ -211,7 +212,7 @@ class WordBook (object):
 			name.append('atime < ?')
 			cond.append(to)
 		sql += ' WHERE ' + ' and '.join(name)
-		sql += ' order by "id";'
+		sql += ' order by "atime";'
 		c.execute(sql, tuple(cond))
 		return c.__iter__()
 
@@ -228,7 +229,7 @@ class WordBook (object):
 			name.append('mtime < ?')
 			cond.append(to)
 		sql += ' WHERE ' + ' and '.join(name)
-		sql += ' order by "id";'
+		sql += ' order by "mtime";'
 		c.execute(sql, tuple(cond))
 		return c.__iter__()
 
@@ -278,6 +279,16 @@ class WordBook (object):
 			return False
 		return True
 
+	# 移动单词
+	def move (self, key, mode, commit = True):
+		update = {}
+		current = time.strftime('%Y-%m-%d %H:%M:%S')
+		update['mode'] = mode
+		update['score'] = 0
+		update['mtime'] = current
+		update['atime'] = current
+		return self.update(key, update, commit)
+
 	# 取得所有单词
 	def dumps (self, mode):
 		return [ n for _, n in self.select(mode) ]
@@ -292,6 +303,11 @@ if __name__ == '__main__':
 	def test1():
 		ws = WordBook("test.db")
 		ws.delete_all()
+		ws.register('fuck', {})
+		ws.register('you', {})
+		ws.register('asshole', {})
+		ws.move('asshole', 2)
+		print(ws.dumps(1))
 		return 0
 	test1()
 
