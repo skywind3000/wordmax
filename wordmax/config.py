@@ -21,19 +21,6 @@ def path_home(name):
 
 sys.path.append(LIBHOME)
 
-DICT_INSTANCE = None
-
-def open_dict():
-	import stardict
-	db = stardict.StarDict(path_home('share/dict/dictionary.db'))
-	return db
-
-def get_dict():
-	global DICT_INSTANCE
-	if not DICT_INSTANCE:
-		DICT_INSTANCE = open_dict()
-	return DICT_INSTANCE
-
 def load_config():
 	import ascmini
 	cfgname = os.path.expanduser('~/.config/wordmax/wordmax.ini')
