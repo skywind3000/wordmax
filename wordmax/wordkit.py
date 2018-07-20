@@ -29,7 +29,7 @@ if sys.version_info[0] >= 3:
 #----------------------------------------------------------------------
 class WordBook (object):
 
-	def __init__ (self, filename):
+	def __init__ (self, filename = None):
 		self._words = []
 		self._lookup = {}
 		self._title = None
@@ -73,6 +73,9 @@ class WordBook (object):
 			self.push(line)
 		fp.close()
 		return True
+
+	def check (self, key):
+		return self._lookup.__contains__(key.lower())
 	
 	def __contains__ (self, key):
 		return self._lookup.__contains__(key.lower())

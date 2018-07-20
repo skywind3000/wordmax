@@ -83,7 +83,13 @@ class LocalData (object):
 
 	def skip (self):
 		if self._skip is None:
-			fn = config.path_data('skip')
+			base = config.path_data('skip')
+			self._skip = wordkit.WordBook()
+			for fn in os.listdir(base):
+				if os.path.splitext(fn)[-1].lower() == '.txt':
+					fn = os.path.join(base, fn)
+					self._skip.load(fn)
+		return self._skip
 			
 
 
@@ -101,6 +107,7 @@ local = LocalData()
 if __name__ == '__main__':
 	def test1():
 		print(share.dict_query('word'))
+		print(local.skip().check('you'))
 		return 0
 	test1()
 
