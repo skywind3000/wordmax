@@ -308,6 +308,7 @@ if __name__ == '__main__':
 		ws.register('asshole', {})
 		ws.move('asshole', 2)
 		print(ws.dumps(0))
+		print(ws.lookup('you'))
 		return 0
 	test1()
 
