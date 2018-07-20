@@ -91,6 +91,9 @@ class LocalData (object):
 					self._skip.load(fn)
 		return self._skip
 			
+	def skip_simple (self, word):
+		skip = self.skip()
+		return skip.check(word)
 
 
 
@@ -107,7 +110,8 @@ local = LocalData()
 if __name__ == '__main__':
 	def test1():
 		print(share.dict_query('word'))
-		print(local.skip().check('you'))
+		print(local.skip_simple('you'))
+		print(local.skip()._count)
 		return 0
 	test1()
 
