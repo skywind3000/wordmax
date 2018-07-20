@@ -87,6 +87,14 @@ class WordBook (object):
 			return default
 		return self._words[key]
 
+	def minus (self, wb):
+		result = []
+		for word in self._words:
+			if word not in wb:
+				result.append(word)
+		return result
+
+
 
 
 
