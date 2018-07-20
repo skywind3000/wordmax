@@ -43,6 +43,7 @@ class WordBank (object):
 		self.__dbname = os.path.abspath(filename)
 		self.__conn = None
 		self.__verbose = verbose
+		self.__datefmt = '%Y-%m-%d %H:%M:%S'
 		self.__open()
 
 	def __open(self):
@@ -105,7 +106,7 @@ class WordBank (object):
 		return True
 
 	# 查询单词
-	def lookup (self, key, mode = None):
+	def query (self, key, mode = None):
 		c = self.__conn.cursor()
 		record = None
 		if isinstance(key, int) or isinstance(key, long):
@@ -233,6 +234,21 @@ class WordBank (object):
 		c.execute(sql, tuple(cond))
 		return c.__iter__()
 
+	# 选择到期的单词
+	def select_expire (self, today):
+		c = self.__conn.cursor()
+		if today is None:
+			today = time.strftime('%Y-%m-%d')
+		today = today[:10] + ' 00:00:00'
+		atime = datetime.datetime.strptime(today, self.__datefmt)
+		atime = atime + datetime.timedelta(days = 1)
+		tomorrow = atime.strftime(self.__datefmt)
+		sql = 'select "id", "word" from "wordbank"'
+		sql += ' WHERE mode = 1 and atime < ?'
+		sql += ' order by "id";'
+		c.execute(sql, (tomorrow,))
+		return c.__iter__()
+
 	# 清空数据库
 	def delete_all (self, reset_id = False):
 		sql1 = 'DELETE FROM wordbank;'
@@ -293,6 +309,24 @@ class WordBank (object):
 	def dumps (self, mode):
 		return [ n for _, n in self.select(mode) ]
 
+	# 修改分数
+	def remember (self, word, score, incday = None, commit = True):
+		desc = self.query(word)
+		if desc is None:
+			return False
+		if desc['mode'] != 1:
+			return False
+		update = {}
+		if score != 0:
+			update['score'] = desc['score'] + score
+		if incday is not None:
+			today = time.strftime('%Y-%m-%d') + ' 00:00:00'
+			atime = datetime.datetime.strptime(today, self.__datefmt)
+			atime = atime + datetime.timedelta(days = incday)
+			update['atime'] = atime.strftime(self.__datefmt)
+		if update:
+			return self.update(word, update, commit)
+		return True
 
 
 
@@ -306,9 +340,11 @@ if __name__ == '__main__':
 		ws.register('fuck', {})
 		ws.register('you', {})
 		ws.register('asshole', {})
-		ws.move('asshole', 2)
+		ws.move('asshole', 1)
 		print(ws.dumps(0))
-		print(ws.lookup('you'))
+		print(ws.query('you'))
+		ws.remember('asshole', 1, 2)
+		print([ n[1] for n in ws.select_expire('2018-07-23') ])
 		return 0
 	test1()
 
