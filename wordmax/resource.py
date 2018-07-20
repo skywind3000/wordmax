@@ -74,7 +74,6 @@ class LocalData (object):
 	def _init_dirs (self):
 		self._safe_mkdir(config.path_data('bank'))
 		self._safe_mkdir(config.path_data('skip'))
-		self._safe_mkdir(config.path_data('logs'))
 
 	def bank (self):
 		if self._bank is None:

@@ -11,6 +11,7 @@
 from __future__ import print_function
 import sys
 import os
+import ascmini
 
 LIBHOME = os.path.dirname(os.path.abspath(__file__))
 DIRHOME = os.path.abspath(os.path.join(LIBHOME, '..'))
@@ -49,24 +50,8 @@ def path_data(name):
 #----------------------------------------------------------------------
 # 日志模块
 #----------------------------------------------------------------------
-class MyLog (object):
-	def __init__ (self):
-		self.home = path_data('logs')
-		import ascmini
-		self.mlog = ascmini.TraceOut(self.home + '/m')
-		self.init = False
-	def __init (self):
-		if self.init:
-			return True
-		if not os.path.exists(self.home):
-			try:
-				os.mkdir(self.home)
-			except:
-				pass
-		self.init = True
-		return True
-	def out (self, channel, *args):
-		
+mlog = ascmini.TraceOut(path_data('logs/m'))
+mlog._makedir = True
 
 
 #----------------------------------------------------------------------
@@ -75,6 +60,10 @@ class MyLog (object):
 if __name__ == '__main__':
 	def test1():
 		print(path_data('output'))
+		return 0
+	def test2():
+		mlog.info('hello')
+		mlog.warn('hello')
 		return 0
 	test1()
 
