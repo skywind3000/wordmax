@@ -306,6 +306,33 @@ class WordBank (object):
 		update['atime'] = current
 		return self.update(key, update, commit)
 
+	# 完成单词学习
+	def mark_completed (self, word, commit = True):
+		data = self.query(word)
+		if data is None:
+			self.register(word, {'mode': 2}, commit)
+		elif data['mode'] != 2:
+			self.move(word, 2, commit)
+		return True
+
+	# 添加到待学习数据库
+	def mark_todo (self, word, commit = True):
+		data = self.query(word)
+		if data is None:
+			self.register(word, {'mode': 0}, commit)
+		elif data['mode'] != 0:
+			self.move(word, 0, commit)
+		return True
+
+	# 添加到学习数据库
+	def mark_studying (self, word, commit = True):
+		data = self.query(word)
+		if data is None:
+			self.register(word, {'mode': 1, 'score': 0}, commit)
+		else:
+			self.move(word, 1, commit)
+		return True
+
 	# 取得所有单词
 	def dumps (self, mode):
 		return [ n for _, n in self.select(mode) ]
@@ -362,33 +389,6 @@ class WordBank (object):
 			atime = atime + datetime.timedelta(days = days)
 		update['atime'] = atime.strftime(self.__datefmt)
 		return self.update(word, update, commit)
-
-	# 完成单词学习
-	def mark_completed (self, word, commit = True):
-		data = self.query(word)
-		if data is None:
-			self.register(word, {'mode': 2}, commit)
-		elif data['mode'] != 2:
-			self.move(word, 2, commit)
-		return True
-
-	# 添加到待学习数据库
-	def mark_todo (self, word, commit = True):
-		data = self.query(word)
-		if data is None:
-			self.register(word, {'mode': 0}, commit)
-		elif data['mode'] != 0:
-			self.move(word, 0, commit)
-		return True
-
-	# 添加到学习数据库
-	def mark_studying (self, word, commit = True):
-		data = self.query(word)
-		if data is None:
-			self.register(word, {'mode': 1, 'score': 0}, commit)
-		else:
-			self.move(word, 1, commit)
-		return True
 
 
 
