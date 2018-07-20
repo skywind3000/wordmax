@@ -60,6 +60,7 @@ class LocalData (object):
 
 	def __init__ (self):
 		self._bank = None
+		self._skip = None
 		self._init_dirs()
 
 	def _safe_mkdir (self, dir):
@@ -73,12 +74,18 @@ class LocalData (object):
 	def _init_dirs (self):
 		self._safe_mkdir(config.path_data('bank'))
 		self._safe_mkdir(config.path_data('skip'))
+		self._safe_mkdir(config.path_data('logs'))
 
 	def bank (self):
 		if self._bank is None:
 			fn = config.path_data('bank/bank.db')
 			self._bank = wordbank.WordBank(fn)
 		return self._bank
+
+	def skip (self):
+		if self._skip is None:
+			fn = config.path_data('skip')
+			
 
 
 

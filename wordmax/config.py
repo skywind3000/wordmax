@@ -47,6 +47,29 @@ def path_data(name):
 
 
 #----------------------------------------------------------------------
+# 日志模块
+#----------------------------------------------------------------------
+class MyLog (object):
+	def __init__ (self):
+		self.home = path_data('logs')
+		import ascmini
+		self.mlog = ascmini.TraceOut(self.home + '/m')
+		self.init = False
+	def __init (self):
+		if self.init:
+			return True
+		if not os.path.exists(self.home):
+			try:
+				os.mkdir(self.home)
+			except:
+				pass
+		self.init = True
+		return True
+	def out (self, channel, *args):
+		
+
+
+#----------------------------------------------------------------------
 # testing case
 #----------------------------------------------------------------------
 if __name__ == '__main__':
