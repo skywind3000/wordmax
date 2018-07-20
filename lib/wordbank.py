@@ -33,7 +33,6 @@ if sys.version_info[0] >= 3:
 	xrange = range
 
 
-
 #----------------------------------------------------------------------
 # WordBank
 #----------------------------------------------------------------------
@@ -44,6 +43,8 @@ class WordBank (object):
 		self.__conn = None
 		self.__verbose = verbose
 		self.__datefmt = '%Y-%m-%d %H:%M:%S'
+		self.__forget = [ 1, 2, 4, 7, 15, 30 ]
+		self.__interval = [ 1, 1, 2, 3, 8, 15 ]
 		self.__open()
 
 	def __open(self):
@@ -53,9 +54,9 @@ class WordBank (object):
 			"word" VARCHAR(64) COLLATE NOCASE NOT NULL UNIQUE,
 			"mode" INTEGER DEFAULT(0),
 			"score" INTEGER DEFAULT(0),
-			"atime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			"mtime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			"ctime" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			"atime" DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+			"mtime" DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+			"ctime" DATETIME NOT NULL DEFAULT (datetime('now', 'localtime'))
 		);
 		CREATE UNIQUE INDEX IF NOT EXISTS "wordbank_1" ON wordbank (id);
 		CREATE UNIQUE INDEX IF NOT EXISTS "wordbank_2" ON wordbank (word);
@@ -309,7 +310,7 @@ class WordBank (object):
 	def dumps (self, mode):
 		return [ n for _, n in self.select(mode) ]
 
-	# 修改分数
+	# 修改分数和学习时间
 	def remember (self, word, score, incday = None, commit = True):
 		desc = self.query(word)
 		if desc is None:
@@ -319,6 +320,8 @@ class WordBank (object):
 		update = {}
 		if score != 0:
 			update['score'] = desc['score'] + score
+			if update['score'] < 0:
+				update['score'] = 0
 		if incday is not None:
 			today = time.strftime('%Y-%m-%d') + ' 00:00:00'
 			atime = datetime.datetime.strptime(today, self.__datefmt)
@@ -327,6 +330,66 @@ class WordBank (object):
 		if update:
 			return self.update(word, update, commit)
 		return True
+
+	# 保存学习结果，成功还是失败，计算记忆曲线，更新学习时间
+	def learn (self, word, success, commit = True):
+		desc = self.query(word)
+		if desc is None:
+			return False
+		if desc['mode'] != 1:
+			return False
+		today = time.strftime('%Y-%m-%d') + ' 00:00:00'
+		atime = datetime.datetime.strptime(today, self.__datefmt)
+		update = {}
+		if success:
+			score = desc['score']
+			update['score'] = score + 1
+			if score >= len(self.__interval):
+				days = 30
+			else:
+				days = self.__interval[score]
+				print(score, days)
+			atime = atime + datetime.timedelta(days = days)
+		else:
+			score = desc['score'] - 1
+			if score < 0:
+				score = 0
+			update['score'] = score
+			if score > len(self.__interval):
+				days = 30
+			else:
+				days = self.__interval[score]
+			atime = atime + datetime.timedelta(days = days)
+		update['atime'] = atime.strftime(self.__datefmt)
+		return self.update(word, update, commit)
+
+	# 完成单词学习
+	def mark_completed (self, word, commit = True):
+		data = self.query(word)
+		if data is None:
+			self.register(word, {'mode': 2}, commit)
+		elif data['mode'] != 2:
+			self.move(word, 2, commit)
+		return True
+
+	# 添加到待学习数据库
+	def mark_todo (self, word, commit = True):
+		data = self.query(word)
+		if data is None:
+			self.register(word, {'mode': 0}, commit)
+		elif data['mode'] != 0:
+			self.move(word, 0, commit)
+		return True
+
+	# 添加到学习数据库
+	def mark_studying (self, word, commit = True):
+		data = self.query(word)
+		if data is None:
+			self.register(word, {'mode': 1, 'score': 0}, commit)
+		else:
+			self.move(word, 1, commit)
+		return True
+
 
 
 
@@ -337,14 +400,18 @@ if __name__ == '__main__':
 	def test1():
 		ws = WordBank("test.db")
 		ws.delete_all()
+		ws.commit()
 		ws.register('fuck', {})
 		ws.register('you', {})
 		ws.register('asshole', {})
 		ws.move('asshole', 1)
 		print(ws.dumps(0))
 		print(ws.query('you'))
-		ws.remember('asshole', 1, 2)
+		ws.remember('asshole', 6, None)
+		ws.learn('asshole', False)
 		print([ n[1] for n in ws.select_expire('2018-07-23') ])
+		ws.mark_studying('fuck')
+		print([ n[1] for n in ws.select_expire('2018-08-04') ])
 		return 0
 	test1()
 
