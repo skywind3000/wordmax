@@ -95,6 +95,10 @@ class LocalData (object):
 		skip = self.skip()
 		return skip.check(word)
 
+	def bank_query (self, word):
+		bank = self.bank()
+		return bank.query(word)
+
 
 
 #----------------------------------------------------------------------
