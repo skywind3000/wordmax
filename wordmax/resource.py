@@ -92,6 +92,8 @@ class LocalData (object):
 		return self._skip
 			
 	def skip_simple (self, word):
+		if "'" in word:
+			return True
 		skip = self.skip()
 		return skip.check(word)
 
