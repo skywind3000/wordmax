@@ -48,7 +48,9 @@ def stripword(word):
 class StarDict (object):
 
 	def __init__ (self, filename, verbose = False):
-		self.__dbname = os.path.abspath(filename)
+		self.__dbname = filename
+		if filename != ':memory:':
+			os.path.abspath(filename)
 		self.__conn = None
 		self.__verbose = verbose
 		self.__open()
