@@ -447,7 +447,9 @@ if __name__ == '__main__':
 	def test2():
 		ws = WordBank("wordbank.db")
 		ws.meta_write('name', 'skywind2', False)
-		print(ws.meta_read('name'))
+		print(ws.meta_read('Name'))
+		ws.meta_write('nAme', 'linwei', False)
+		print(ws.meta_read('Name'))
 	test2()
 
 
