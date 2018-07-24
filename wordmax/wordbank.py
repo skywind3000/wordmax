@@ -62,6 +62,12 @@ class WordBank (object):
 		CREATE UNIQUE INDEX IF NOT EXISTS "wordbank_2" ON wordbank (word);
 		CREATE INDEX IF NOT EXISTS "wordbank_3" ON wordbank (mode);
 		CREATE INDEX IF NOT EXISTS "wordbank_4" ON wordbank (atime);
+		CREATE TABLE IF NOT EXISTS "meta" (
+			"name" VARCHAR(16) PRIMARY KEY COLLATE NOCASE NOT NULL UNIQUE,
+			"value" TEXT,
+			"ctime" DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+			"mtime" DATETIME NOT NULL DEFAULT (datetime('now', 'localtime'))
+		);
 		'''
 		
 		self.__conn = sqlite3.connect(self.__dbname, isolation_level = 'IMMEDIATE')
@@ -306,6 +312,31 @@ class WordBank (object):
 		update['atime'] = current
 		return self.update(key, update, commit)
 
+	# 写入 meta 
+	def meta_write (self, name, value, commit = True):
+		sql1 = 'insert or ignore into meta(name, value, ctime, mtime)'
+		sql1 += ' values(?, ?, ?, ?);'
+		sql2 = 'UPDATE meta SET value=?, mtime=? WHERE name=?;'
+		now = time.strftime('%Y-%m-%d %H:%M:%S')
+		value = json.dumps(value)
+		try:
+			self.__conn.execute(sql1, (name, value, now, now))
+			self.__conn.execute(sql2, (value, now, name))
+			if commit:
+				self.__conn.commit()
+		except sqlite3.IntegrityError:
+			return False
+		return True
+
+	# 读取 meta
+	def meta_read (self, name):
+		c = self.__conn.cursor()
+		c.execute('select value from meta where name=?;', (name,))
+		record = c.fetchone()
+		if record is None:
+			return None
+		return json.loads(record[0])
+
 	# 完成单词学习
 	def mark_completed (self, word, commit = True):
 		data = self.query(word)
@@ -398,7 +429,7 @@ class WordBank (object):
 #----------------------------------------------------------------------
 if __name__ == '__main__':
 	def test1():
-		ws = WordBank("test.db")
+		ws = WordBank("wordbank.db")
 		ws.delete_all()
 		ws.commit()
 		ws.register('fuck', {})
@@ -413,6 +444,10 @@ if __name__ == '__main__':
 		ws.mark_studying('fuck')
 		print([ n[1] for n in ws.select_expire('2018-08-04') ])
 		return 0
-	test1()
+	def test2():
+		ws = WordBank("wordbank.db")
+		ws.meta_write('name', 'skywind2', False)
+		print(ws.meta_read('name'))
+	test2()
 
 
