@@ -86,6 +86,8 @@ class WordBank (object):
 			self.__names[k] = v
 
 		self.__enable = self.__fields[2:-1]
+		self.ctime = None
+		self.mtime = None
 
 		return True
 
@@ -331,10 +333,12 @@ class WordBank (object):
 	# 读取 meta
 	def meta_read (self, name):
 		c = self.__conn.cursor()
-		c.execute('select value from meta where name=?;', (name,))
+		c.execute('select value, ctime, mtime from meta where name=?;', (name,))
 		record = c.fetchone()
 		if record is None:
 			return None
+		self.ctime = record[1]
+		self.mtime = record[2]
 		return json.loads(record[0])
 
 	# 完成单词学习
@@ -446,10 +450,12 @@ if __name__ == '__main__':
 		return 0
 	def test2():
 		ws = WordBank("wordbank.db")
-		ws.meta_write('name', 'skywind2', False)
+		ws.meta_write('name', 'skywind2')
 		print(ws.meta_read('Name'))
-		ws.meta_write('nAme', 'linwei', False)
+		print(ws.mtime, ws.ctime)
+		ws.meta_write('nAme', 'linwei')
 		print(ws.meta_read('Name'))
+		print(ws.mtime, ws.ctime)
 	test2()
 
 
