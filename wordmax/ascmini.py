@@ -6,7 +6,7 @@
 # ascmini.py - mini library
 #
 # Created by skywind on 2017/03/24
-# Last Modified: 2018/08/10 19:04
+# Version: 5, Last Modified: 2019/03/20 17:19
 #
 #======================================================================
 from __future__ import print_function
@@ -15,6 +15,7 @@ import time
 import os
 import socket
 import collections
+import json
 
 
 #----------------------------------------------------------------------
@@ -214,7 +215,7 @@ class OBJECT (object):
     def __len__ (self):
         return self.__dict__.__len__()
     def __repr__ (self):
-        line = [ '%s=%s'%(k, repr(v)) for k, v in self.__dict__.iteritems() ]
+        line = [ '%s=%s'%(k, repr(v)) for k, v in self.__dict__.items() ]
         return 'OBJECT(' + ', '.join(line) + ')'
     def __str__ (self):
         return self.__repr__()
@@ -586,6 +587,65 @@ def readts(ts, onlyday = False):
 
 
 #----------------------------------------------------------------------
+# parse text
+#----------------------------------------------------------------------
+def parse_conf_text(text, default = None):
+    if text is None:
+        return default
+    if isinstance(default, str):
+        return text
+    elif isinstance(default, bool):
+        text = text.lower()
+        if not text:
+            return default
+        text = text.lower()
+        if default:
+            if text in ('false', 'f', 'no', 'n', '0'):
+                return False
+        else:
+            if text in ('true', 'ok', 'yes', 't', 'y', '1'):
+                return True
+            if text.isdigit():
+                try:
+                    value = int(text)
+                    if value:
+                        return True
+                except:
+                    pass
+        return default
+    elif isinstance(default, float):
+        try:
+            value = float(text)
+            return value
+        except:
+            return default
+    elif isinstance(default, int) or isinstance(default, long):
+        multiply = 1
+        text = text.strip('\r\n\t ')
+        postfix1 = text[-1:].lower()
+        postfix2 = text[-2:].lower()
+        if postfix1 == 'k':
+            multiply = 1024
+            text = text[:-1]
+        elif postfix1 == 'm': 
+            multiply = 1024 * 1024
+            text = text[:-1]
+        elif postfix2 == 'kb':
+            multiply = 1024
+            text = text[:-2]
+        elif postfix2 == 'mb':
+            multiply = 1024 * 1024
+            text = text[:-2]
+        try: text = int(text.strip('\r\n\t '), 0)
+        except: text = default
+        if multiply > 1: 
+            text *= multiply
+        return text
+    return text
+
+
+
+#----------------------------------------------------------------------
 # ConfigReader
 #----------------------------------------------------------------------
 class ConfigReader (object):
@@ -649,28 +709,7 @@ class ConfigReader (object):
         text = sect.get(item, None)
         if text is None:
             return default
-        if isinstance(default, int) or isinstance(default, long):
-            multiply = 1
-            text = text.strip('\r\n\t ')
-            postfix1 = text[-1:].lower()
-            postfix2 = text[-2:].lower()
-            if postfix1 == 'k':
-                multiply = 1024
-                text = text[:-1]
-            elif postfix1 == 'm': 
-                multiply = 1024 * 1024
-                text = text[:-1]
-            elif postfix2 == 'kb':
-                multiply = 1024
-                text = text[:-2]
-            elif postfix2 == 'mb':
-                multiply = 1024 * 1024
-                text = text[:-2]
-            try: text = int(text.strip('\r\n\t '), 0)
-            except: text = default
-            if multiply > 1: 
-                text *= multiply
-        return text
+        return parse_conf_text(text, default)
 
 
 #----------------------------------------------------------------------
@@ -1000,6 +1039,31 @@ class ShellUtils (object):
         zfp = None
         return 0
 
+    # find root
+    def find_root (self, path, markers = None, fallback = False):
+        if markers is None:
+            markers = ('.git', '.svn', '.hg', '.project', '.root')
+        if path is None:
+            path = os.getcwd()
+        path = os.path.abspath(path)
+        base = path
+        while True:
+            parent = os.path.normpath(os.path.join(base, '..'))
+            if parent == base:
+                break
+            for marker in markers:
+                test = os.path.join(base, marker)
+                if os.path.exists(test):
+                    return base
+            base = parent
+        if fallback:
+            return path
+        return None
+
+    # project root
+    def project_root (self, path, markers = None):
+        return self.find_root(path, markers, True)
+
 
 utils = ShellUtils()
 
@@ -1063,6 +1127,19 @@ class TraceOut (object):
             self._stderr.flush()
         return True
 
+    def change (self, prefix):
+        self._lock.acquire()
+        self._logtime = None
+        self._prefix = prefix
+        if self._logfile:
+            try:
+                self._logfile.close()
+            except:
+                pass
+        self._logfile = None
+        self._lock.release()
+        return True
+
     def out (self, channel, *args):
         if not self._channels.get(channel, False):
             return False
@@ -1111,7 +1188,7 @@ class OutputHandler (object):
 #----------------------------------------------------------------------
 # run until mainfunc returns false 
 #----------------------------------------------------------------------
-def safe_loop (mainfunc, trace = None, sleep = 2.0):
+def safe_loop (mainfunc, trace = None, sleep = 2.0, dtor = None):
     while True:
         try:
             hr = mainfunc()
@@ -1131,11 +1208,23 @@ def safe_loop (mainfunc, trace = None, sleep = 2.0):
             if trace:
                 for line in tb:
                     trace.error(line)
-                trace.error('ready to restart')
-                trace.error('')
             else:
                 for line in tb:
                     sys.stderr.write(line + '\n')
+            if dtor:
+                if trace:
+                    trace.error('clean up')
+                else:
+                    sys.stderr.write('clean up\n')
+                try:
+                    dtor()
+                except:
+                    pass
+            if trace:
+                trace.error('')
+                trace.error('restarting in %s seconds'%sleep)
+                trace.error('')
+            else:
                 sys.stderr.write('\nready to restart\n')
             time.sleep(sleep)
     return True
@@ -1203,7 +1292,7 @@ def tabulify (rows, style = 0):
 #----------------------------------------------------------------------
 def compact_dumps(data):
     output = []
-    for k, v in data.iteritems():
+    for k, v in data.items():
         k = k.strip().replace(',', '').replace(':', '')
         v = v.strip().replace(',', '').replace(':', '')
         output.append(k + ':' + v)
@@ -1339,11 +1428,12 @@ class Registry (object):
         return self.registry.get(key, default)
 
     def set (self, key, value):
-        if not isinstance(key, str):
-            raise ValueError('key must be string')
+        if (not isinstance(key, str)) and (not isinstance(key, int)):
+            raise ValueError('key must be int/string')
         if (not isinstance(value, str)) and (not isinstance(value, int)):
-            if not isinstance(value, float):
-                raise ValueError('value must be int/string/float')
+            if (not isinstance(value, float)) and (not isinstance(value, bool)):
+                if value is not None:
+                    raise ValueError('value must be int/string/float')
         self.registry[key] = value
         return True
 
@@ -1364,6 +1454,16 @@ class Registry (object):
 
     def keys (self):
         return self.registry.keys()
+
+
+#----------------------------------------------------------------------
+# json decode: safe for python 3.5
+#----------------------------------------------------------------------
+def json_loads(text):
+    if sys.version_info[0] == 3 and sys.version_info[1] < 7:
+        if isinstance(text, bytes):
+            text = text.decode('utf-8')
+    return json.loads(text)
 
 
 #----------------------------------------------------------------------
@@ -1402,7 +1502,11 @@ if __name__ == '__main__':
         reg.set('target.pi', 3.1415926)
         # reg.save()
         return 0
-    test1()
+    def test6():
+        print(utils.find_root(__file__))
+        print(utils.project_root('/'))
+        return 0
+    test6()
 
 
 

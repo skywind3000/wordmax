@@ -24,32 +24,32 @@ import wordkit
 #----------------------------------------------------------------------
 class ShareData (object):
 
-	def __init__ (self):
-		self._dict = None
-		self._lemma = None
-		self._root = None
+    def __init__ (self):
+        self._dict = None
+        self._lemma = None
+        self._root = None
 
-	def dict (self):
-		if self._dict is None:
-			db = config.path_home('share/dict/dictionary.db')
-			self._dict = stardict.StarDict(db)
-		return self._dict
+    def dict (self):
+        if self._dict is None:
+            db = config.path_home('share/dict/dictionary.db')
+            self._dict = stardict.StarDict(db)
+        return self._dict
 
-	def lemma (self):
-		if self._lemma is None:
-			fn = config.path_home('share/dict/lemma.en.txt')
-			self._lemma = stardict.LemmaDB()
-			self._lemma.load(fn)
-		return self._lemma
+    def lemma (self):
+        if self._lemma is None:
+            fn = config.path_home('share/dict/lemma.en.txt')
+            self._lemma = stardict.LemmaDB()
+            self._lemma.load(fn)
+        return self._lemma
 
-	def root (self):
-		if self._root is None:
-			fn = config.path_home('share/dict/wordroot.txt')
-			self._root = ascmini.load_config(fn)
-		return self._root
+    def root (self):
+        if self._root is None:
+            fn = config.path_home('share/dict/wordroot.txt')
+            self._root = ascmini.load_config(fn)
+        return self._root
 
-	def dict_query (self, word):
-		return self.dict().query(word)
+    def dict_query (self, word):
+        return self.dict().query(word)
 
 
 
@@ -58,48 +58,48 @@ class ShareData (object):
 #----------------------------------------------------------------------
 class LocalData (object):
 
-	def __init__ (self):
-		self._bank = None
-		self._skip = None
-		self._init_dirs()
+    def __init__ (self):
+        self._bank = None
+        self._skip = None
+        self._init_dirs()
 
-	def _safe_mkdir (self, dir):
-		if not os.path.exists(dir):
-			try:
-				os.mkdir(dir)
-			except:
-				pass
-		return True
+    def _safe_mkdir (self, dir):
+        if not os.path.exists(dir):
+            try:
+                os.mkdir(dir)
+            except:
+                pass
+        return True
 
-	def _init_dirs (self):
-		self._safe_mkdir(config.path_data('bank'))
-		self._safe_mkdir(config.path_data('skip'))
+    def _init_dirs (self):
+        self._safe_mkdir(config.path_data('bank'))
+        self._safe_mkdir(config.path_data('skip'))
 
-	def bank (self):
-		if self._bank is None:
-			fn = config.path_data('bank/bank.db')
-			self._bank = wordbank.WordBank(fn)
-		return self._bank
+    def bank (self):
+        if self._bank is None:
+            fn = config.path_data('bank/bank.db')
+            self._bank = wordbank.WordBank(fn)
+        return self._bank
 
-	def skip (self):
-		if self._skip is None:
-			base = config.path_data('skip')
-			self._skip = wordkit.WordBook()
-			for fn in os.listdir(base):
-				if os.path.splitext(fn)[-1].lower() == '.txt':
-					fn = os.path.join(base, fn)
-					self._skip.load(fn)
-		return self._skip
-			
-	def skip_simple (self, word):
-		if "'" in word:
-			return True
-		skip = self.skip()
-		return skip.check(word)
+    def skip (self):
+        if self._skip is None:
+            base = config.path_data('skip')
+            self._skip = wordkit.WordBook()
+            for fn in os.listdir(base):
+                if os.path.splitext(fn)[-1].lower() == '.txt':
+                    fn = os.path.join(base, fn)
+                    self._skip.load(fn)
+        return self._skip
+            
+    def skip_simple (self, word):
+        if "'" in word:
+            return True
+        skip = self.skip()
+        return skip.check(word)
 
-	def bank_query (self, word):
-		bank = self.bank()
-		return bank.query(word)
+    def bank_query (self, word):
+        bank = self.bank()
+        return bank.query(word)
 
 
 
@@ -114,12 +114,12 @@ local = LocalData()
 # testing case
 #----------------------------------------------------------------------
 if __name__ == '__main__':
-	def test1():
-		print(share.dict_query('word'))
-		print(local.skip_simple('you'))
-		print(local.skip()._count)
-		return 0
-	test1()
+    def test1():
+        print(share.dict_query('word'))
+        print(local.skip_simple('you'))
+        print(local.skip()._count)
+        return 0
+    test1()
 
 
 
