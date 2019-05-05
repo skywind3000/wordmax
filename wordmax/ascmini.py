@@ -68,12 +68,12 @@ def execute(args, shell = False, capture = False):
         shell = False
     if shell and (not capture):
         os.system(cmd)
-        return ''
+        return b''
     elif (not shell) and (not capture):
         import subprocess
         if 'call' in subprocess.__dict__:
             subprocess.call(args)
-            return ''
+            return b''
     import subprocess
     if 'Popen' in subprocess.__dict__:
         p = subprocess.Popen(args, shell = shell,
@@ -83,14 +83,14 @@ def execute(args, shell = False, capture = False):
     else:
         p = None
         stdin, stdouterr = os.popen4(cmd)
-    text = stdouterr.read()
     stdin.close()
+    text = stdouterr.read()
     stdouterr.close()
     if p: p.wait()
     if not capture:
         sys.stdout.write(text)
         sys.stdout.flush()
-        return ''
+        return b''
     return text
 
 
@@ -136,10 +136,10 @@ def call(args, input_data = None, combine = False):
                 input_data = input_data.encode('utf-8', 'ignore')
         stdin.write(input_data)
         stdin.flush()
+    stdin.close()
     exeout = stdout.read()
     if stderr: exeerr = stderr.read()
     else: exeerr = None
-    stdin.close()
     stdout.close()
     if stderr: stderr.close()
     retcode = None
@@ -843,7 +843,6 @@ class WebKit (object):
         import cgi
         return cgi.escape(s, True).replace('\n', "</br>\n")
 
-
     def html2text (self, html):
         part = []
         pos = 0
@@ -1064,6 +1063,63 @@ class ShellUtils (object):
     def project_root (self, path, markers = None):
         return self.find_root(path, markers, True)
 
+    # getopt: returns (options, args)
+    def getopt (self, argv):
+        args = []
+        options = {}
+        if argv is None:
+            argv = sys.argv[1:]
+        index = 0
+        count = len(argv)
+        while index < count:
+            arg = argv[index]
+            if arg != '':
+                head = arg[:1]
+                if head != '-':
+                    break
+                if arg == '-':
+                    break
+                name = arg.lstrip('-')
+                key, _, val = name.partition('=')
+                options[key.strip()] = val.strip()
+            index += 1
+        while index < count:
+            args.append(argv[index])
+            index += 1
+        return options, args
+
+    # hexdump
+    def hexdump (self, data, char = False):
+        content = ''
+        charset = ''
+        lines = []
+        if isinstance(data, str):
+            if sys.version_info[0] >= 3:
+                data = data.encode('utf-8', 'ignore')
+        if not isinstance(data, bytes):
+            raise ValueError('data must be bytes')
+        for i, _ in enumerate(data):
+            if sys.version_info[0] < 3:
+                ascii = ord(data[i])
+            else:
+                ascii = data[i]
+            if i % 16 == 0: content += '%08X  '%i
+            content += '%02X'%ascii
+            content += ((i & 15) == 7) and '-' or ' '
+            if (ascii >= 0x20) and (ascii < 0x7f): charset += chr(ascii)
+            else: charset += '.'
+            if (i % 16 == 15): 
+                lines.append(content + ' ' + charset)
+                content, charset = '', ''
+        if len(content) < 60: content += ' ' * (58 - len(content))
+        lines.append(content + ' ' + charset)
+        limit = char and 104 or 58
+        return '\n'.join([ n[:limit] for n in lines ])
+
+    def print_binary (self, data, char = False):
+        print(self.hexdump(data, char))
+        return True
+    
 
 utils = ShellUtils()
 
@@ -1505,6 +1561,9 @@ if __name__ == '__main__':
     def test6():
         print(utils.find_root(__file__))
         print(utils.project_root('/'))
+        utils.print_binary('Hello, World !! Ni Hao !!', True)
+        print(utils.getopt(['-t', '--name=123', '--out', '-', 'abc', 'def', 'ghi']))
+        print(utils.getopt([]))
         return 0
     test6()
 
