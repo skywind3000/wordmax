@@ -27,6 +27,8 @@ def load_config():
     cfgname = os.path.expanduser('~/.config/wordmax/wordmax.ini')
     cfgname = os.path.abspath(cfgname)
     cfg = ascmini.ConfigReader(cfgname)
+    if 'default' not in cfg.config:
+        cfg.config['default'] = {}
     if 'data' not in cfg.config['default']:
         data = os.path.expanduser('~/.cache/wordmax')
         data = os.path.abspath(data)
