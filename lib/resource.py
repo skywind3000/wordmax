@@ -12,7 +12,7 @@ from __future__ import print_function
 import sys
 import time
 import os
-import config
+import ccinit
 import ascmini
 import stardict
 import wordbank
@@ -31,20 +31,20 @@ class ShareData (object):
 
     def dict (self):
         if self._dict is None:
-            db = config.path_home('share/dict/dictionary.db')
+            db = ccinit.path_home('share/dict/dictionary.db')
             self._dict = stardict.StarDict(db)
         return self._dict
 
     def lemma (self):
         if self._lemma is None:
-            fn = config.path_home('share/dict/lemma.en.txt')
+            fn = ccinit.path_home('share/dict/lemma.en.txt')
             self._lemma = stardict.LemmaDB()
             self._lemma.load(fn)
         return self._lemma
 
     def root (self):
         if self._root is None:
-            fn = config.path_home('share/dict/wordroot.txt')
+            fn = ccinit.path_home('share/dict/wordroot.txt')
             self._root = ascmini.load_config(fn)
         return self._root
 
@@ -72,18 +72,18 @@ class LocalData (object):
         return True
 
     def _init_dirs (self):
-        self._safe_mkdir(config.path_data('bank'))
-        self._safe_mkdir(config.path_data('skip'))
+        self._safe_mkdir(ccinit.path_data('bank'))
+        self._safe_mkdir(ccinit.path_data('skip'))
 
     def bank (self):
         if self._bank is None:
-            fn = config.path_data('bank/bank.db')
+            fn = ccinit.path_data('bank/bank.db')
             self._bank = wordbank.WordBank(fn)
         return self._bank
 
     def skip (self):
         if self._skip is None:
-            base = config.path_data('skip')
+            base = ccinit.path_data('skip')
             self._skip = wordkit.WordBook()
             for fn in os.listdir(base):
                 if os.path.splitext(fn)[-1].lower() == '.txt':
