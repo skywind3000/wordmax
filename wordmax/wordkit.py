@@ -32,6 +32,7 @@ class WordBook (object):
     def __init__ (self, filename = None):
         self._words = []
         self._lookup = {}
+        self._info = {}
         self._title = None
         self._count = 0
         self.load(filename)
@@ -42,7 +43,7 @@ class WordBook (object):
         self._title = None
         self._count = 0
 
-    def push (self, word):
+    def push (self, word, info = None):
         word = word.strip('\r\n\t ')
         if not word:
             return False
@@ -51,6 +52,7 @@ class WordBook (object):
             return False
         self._lookup[key] = len(self._words)
         self._words.append(word)
+        self._info[key] = info
         self._count = len(self._words)
         return True
     
@@ -70,7 +72,16 @@ class WordBook (object):
                 if line and self._title is None:
                     self._title = line
                 continue
-            self.push(line)
+            word, _, info = line.partition(',')
+            word = word.strip()
+            if not word:
+                continue
+            info = info.strip()
+            if info:
+                info = info.split(',')
+            else:
+                info = None
+            self.push(line, info)
         fp.close()
         return True
 
@@ -90,6 +101,9 @@ class WordBook (object):
             return default
         return self._words[key]
 
+    def info (self, key):
+        return self._info.get(key.lower())
+
     def minus (self, wb):
         result = []
         for word in self._words:
@@ -106,8 +120,8 @@ class WordBook (object):
 #----------------------------------------------------------------------
 if __name__ == '__main__':
     def test1():
-        wb = WordBook('e:/english/english/share/skip/simple-1.txt')
-        wb.load('e:/english/english/share/skip/simple-2.txt')
+        wb = WordBook('e:/english/english/skip/simple-1.txt')
+        wb.load('e:/english/english/skip/simple-2.txt')
         print(len(wb))
         return 0
     test1()
