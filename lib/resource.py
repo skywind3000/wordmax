@@ -28,6 +28,7 @@ class ShareData (object):
         self._dict = None
         self._lemma = None
         self._root = None
+        self._books = {}
 
     def dict (self):
         if self._dict is None:
@@ -47,6 +48,15 @@ class ShareData (object):
             fn = ccinit.path_home('share/dict/wordroot.txt')
             self._root = ascmini.load_config(fn)
         return self._root
+
+    def book (self, name):
+        if name not in self._books:
+            fn = ccinit.path_home('share/wordbook/%s'%name)
+            if not os.path.exists(fn):
+                return None
+            book = wordkit.WordBook(fn)
+            self._books[name] = book
+        return self._books[name]
 
     def dict_query (self, word):
         return self.dict().query(word)
