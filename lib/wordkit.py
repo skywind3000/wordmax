@@ -81,7 +81,7 @@ class WordBook (object):
                 info = info.split(',')
             else:
                 info = None
-            self.push(line, info)
+            self.push(word, info)
         fp.close()
         return True
 
@@ -101,6 +101,9 @@ class WordBook (object):
             return default
         return self._words[key]
 
+    def __iter__ (self):
+        return self._words.__iter__()
+
     def info (self, key):
         return self._info.get(key.lower())
 
@@ -111,8 +114,8 @@ class WordBook (object):
                 result.append(word)
         return result
 
-
-
+    def dumps (self):
+        return [ n for n in self._words ]
 
 
 #----------------------------------------------------------------------
