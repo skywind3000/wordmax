@@ -28,6 +28,7 @@ class ShareData (object):
         self._dict = None
         self._lemma = None
         self._root = None
+        self._scope = None
         self._books = {}
 
     def dict (self):
@@ -61,6 +62,15 @@ class ShareData (object):
     def dict_query (self, word):
         return self.dict().query(word)
 
+    def scope (self):
+        if self._scope is None:
+            fn = ccinit.path_home('share/level/scope.txt')
+            self._scope = wordkit.WordBook(fn)
+        return self._scope
+
+    def scope_check (self, word):
+        scope = self.scope()
+        return (word in scope)
 
 
 #----------------------------------------------------------------------
