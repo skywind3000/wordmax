@@ -172,7 +172,10 @@ class ToolBox (object):
 
     def tts_engine (self):
         if not self._tts_engine:
-            import pyttsx3
+            try:
+                import pyttsx3
+            except ImportError:
+                return None
             self._tts_engine = pyttsx3.init()
             voices = self._tts_engine.getProperty('voices')
             for voice in voices:
@@ -184,6 +187,8 @@ class ToolBox (object):
 
     def tts_say (self, text):
         engine = self.tts_engine()
+        if not engine:
+            return False
         engine.say(text)
         engine.runAndWait()
         return True
@@ -198,6 +203,12 @@ class ToolBox (object):
             b[i] = b[len(b) - 1]
             b.pop()
         return n
+
+    def playword (self, word):
+        hr = self.audio_play(word)
+        if not hr:
+            return self.tts_say(word)
+        return True
 
 
 #----------------------------------------------------------------------
