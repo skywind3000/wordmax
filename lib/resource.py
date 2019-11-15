@@ -130,60 +130,69 @@ local = LocalData()
 
 
 #----------------------------------------------------------------------
-# audio play
+# tools
 #----------------------------------------------------------------------
-def audio_locate():
-    locate = ccinit.cfg.option('default', 'audio')
-    if not locate:
-        locate = ccinit.path_home('share/audio')
-    return locate
+class ToolBox (object):
 
-def audio_play(word, volume = None, wait = True):
-    if sys.platform[:3] != 'win':
-        return False
-    locate = audio_locate()
-    if not os.path.exists(locate):
-        return False
-    head = word[:1].lower()
-    if not head.isalnum():
-        head = '-'
-    src = os.path.join(locate, head, word.lower() + '.mp3')
-    if not os.path.exists(src):
-        return False
-    import playmp3
-    return playmp3.audio_play(src, volume, wait)
+    def __init__ (self):
+        self._tts_engine = None  
 
-def audio_stop():
-    if sys.platform[:3] != 'win':
-        return False
-    import playmp3
-    return playmp3.audio_stop()
+    def audio_locate (self):
+        locate = ccinit.cfg.option('default', 'audio')
+        if not locate:
+            locate = ccinit.path_home('share/audio')
+        return locate
 
+    def audio_play (self, word, volume = None, wait = True):
+        if sys.platform[:3] != 'win':
+            return False
+        locate = self.audio_locate()
+        if not os.path.exists(locate):
+            return False
+        head = word[:1].lower()
+        if not head.isalnum():
+            head = '-'
+        src = os.path.join(locate, head, word.lower() + '.mp3')
+        if not os.path.exists(src):
+            return False
+        import playmp3
+        return playmp3.audio_play(src, volume, wait)
+
+    def audio_stop (self):
+        if sys.platform[:3] != 'win':
+            return False
+        import playmp3
+        return playmp3.audio_stop()
+
+    def audio_check (self):
+        if sys.platform[:3] != 'win':
+            return False
+        import playmp3
+        return playmp3.audio_check()
+
+    def tts_engine (self):
+        if not self._tts_engine:
+            import pyttsx3
+            self._tts_engine = pyttsx3.init()
+            voices = self._tts_engine.getProperty('voices')
+            for voice in voices:
+                if 'english' in voice.name.lower():
+                    self._tts_engine.setProperty('voice', voice.id)
+                    # print('choose: %s'%voice.name)
+                    break
+        return self._tts_engine
+
+    def tts_say (self, text):
+        engine = self.tts_engine()
+        engine.say(text)
+        engine.runAndWait()
+        return True
 
 
 #----------------------------------------------------------------------
-# tts
+# 
 #----------------------------------------------------------------------
-__tts_engine = None
-
-def tts_engine():
-    global __tts_engine
-    if not __tts_engine:
-        import pyttsx3
-        __tts_engine = pyttsx3.init()
-        voices = __tts_engine.getProperty('voices')
-        for voice in voices:
-            if 'english' in voice.name.lower():
-                __tts_engine.setProperty('voice', voice.id)
-                # print('choose: %s'%voice.name)
-                break
-    return __tts_engine
-
-def tts_say(text):
-    engine = tts_engine()
-    engine.say(text)
-    engine.runAndWait()
-    return True
+utils = ToolBox()
 
 
 #----------------------------------------------------------------------
@@ -197,12 +206,12 @@ if __name__ == '__main__':
         return 0
     def test2():
         # ccinit.cfg.config['default']['audio'] = 'e:/english/resource/audio'
-        audio_play('hello')
+        utils.audio_play('hello')
         return 0
     def test3():
-        tts_say('I will speak this text')
+        utils.tts_say('I will speak this text')
         return 0
-    test1()
+    test3()
 
 
 
