@@ -122,6 +122,36 @@ class LocalData (object):
         return bank.query(word)
 
 
+#----------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------
+def audio_locate():
+    locate = ccinit.cfg.option('default', 'audio')
+    if not locate:
+        locate = ccinit.path_home('share/audio')
+    return locate
+
+def audio_play(word, volume = None, wait = True):
+    if sys.platform[:3] != 'win':
+        return False
+    locate = audio_locate()
+    if not os.path.exists(locate):
+        return False
+    head = word[:1].lower()
+    if not head.isalnum():
+        head = '-'
+    src = os.path.join(locate, head, word + '.mp3')
+    if not os.path.exists(src):
+        return False
+    import playmp3
+    return playmp3.audio_play(src, volume, wait)
+
+def audio_stop():
+    if sys.platform[:3] != 'win':
+        return False
+    import playmp3
+    return playmp3.audio_stop()
+
 
 #----------------------------------------------------------------------
 # local
@@ -138,6 +168,10 @@ if __name__ == '__main__':
         print(share.dict_query('word'))
         print(local.skip_simple('you'))
         print(local.skip()._count)
+        return 0
+    def test2():
+        # ccinit.cfg.config['default']['audio'] = 'e:/english/resource/audio'
+        audio_play('hello')
         return 0
     test1()
 
