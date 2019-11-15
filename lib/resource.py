@@ -140,7 +140,7 @@ def audio_play(word, volume = None, wait = True):
     head = word[:1].lower()
     if not head.isalnum():
         head = '-'
-    src = os.path.join(locate, head, word + '.mp3')
+    src = os.path.join(locate, head, word.lower() + '.mp3')
     if not os.path.exists(src):
         return False
     import playmp3
