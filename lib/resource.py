@@ -204,7 +204,7 @@ class ToolBox (object):
             b.pop()
         return n
 
-    def playword (self, word):
+    def say (self, word):
         hr = self.audio_play(word)
         if not hr:
             return self.tts_say(word)
