@@ -123,7 +123,14 @@ class LocalData (object):
 
 
 #----------------------------------------------------------------------
-# 
+# local
+#----------------------------------------------------------------------
+share = ShareData()
+local = LocalData()
+
+
+#----------------------------------------------------------------------
+# audio play
 #----------------------------------------------------------------------
 def audio_locate():
     locate = ccinit.cfg.option('default', 'audio')
@@ -153,11 +160,30 @@ def audio_stop():
     return playmp3.audio_stop()
 
 
+
 #----------------------------------------------------------------------
-# local
+# tts
 #----------------------------------------------------------------------
-share = ShareData()
-local = LocalData()
+__tts_engine = None
+
+def tts_engine():
+    global __tts_engine
+    if not __tts_engine:
+        import pyttsx3
+        __tts_engine = pyttsx3.init()
+        voices = __tts_engine.getProperty('voices')
+        for voice in voices:
+            if 'english' in voice.name.lower():
+                __tts_engine.setProperty('voice', voice.id)
+                # print('choose: %s'%voice.name)
+                break
+    return __tts_engine
+
+def tts_say(text):
+    engine = tts_engine()
+    engine.say(text)
+    engine.runAndWait()
+    return True
 
 
 #----------------------------------------------------------------------
@@ -172,6 +198,9 @@ if __name__ == '__main__':
     def test2():
         # ccinit.cfg.config['default']['audio'] = 'e:/english/resource/audio'
         audio_play('hello')
+        return 0
+    def test3():
+        tts_say('I will speak this text')
         return 0
     test1()
 
