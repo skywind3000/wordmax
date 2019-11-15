@@ -188,6 +188,17 @@ class ToolBox (object):
         engine.runAndWait()
         return True
 
+    def disorder (self, array):
+        import random
+        b = [ n for n in array ]
+        n = []
+        while len(b) > 0:
+            i = random.randint(0, len(b) - 1)
+            n.append(b[i])
+            b[i] = b[len(b) - 1]
+            b.pop()
+        return n
+
 
 #----------------------------------------------------------------------
 # 
