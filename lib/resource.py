@@ -31,7 +31,7 @@ class ShareData (object):
         self._scope = None
         self._books = {}
 
-    def dict (self):
+    def dictionary (self):
         if self._dict is None:
             db = ccinit.path_home('share/dict/dictionary.db')
             self._dict = stardict.StarDict(db)
@@ -60,7 +60,7 @@ class ShareData (object):
         return self._books[name]
 
     def dict_query (self, word):
-        return self.dict().query(word)
+        return self.dictionary().query(word)
 
     def scope (self):
         if self._scope is None:
