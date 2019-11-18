@@ -210,6 +210,59 @@ class ToolBox (object):
             return self.tts_say(word)
         return True
 
+    def word_frq (self, word):
+        q = share.dict_query(word)
+        if not q:
+            return None
+        elif (not q['frq']) and (not q['bnc']):
+            return None
+        if q['frq'] and (not q['bnc']):
+            frq = q['frq']
+        elif (not q['frq']) and q['bnc']:
+            frq = q['bnc']
+        elif q['frq'] and q['bnc']:
+            frq = min(q['frq'], q['bnc'])
+        else:
+            raise ValueError('word frq error: %s'%word)
+        return frq
+
+    def importance (self, word):
+        if local.skip_simple(word):
+            return False
+        q = share.dict_query(word)
+        if not q:
+            return False
+        if not q['frq']:
+            return False
+        elif not q['bnc']:
+            return False
+        if self.word_frq(word) > 20000:
+            return False
+        return True
+
+    def word_score (self, word):
+        q = share.dict_query(word)
+        if not q:
+            return 0
+        detail = q['detail']
+        if q['oxford'] == 1:
+            if 'zk' in q['tag']:
+                return 0
+            elif 'gk' in q['tag']:
+                return 1
+            return 2
+        frq = self.word_frq(word)
+        if frq is None:
+            return None
+        if frq < 3000:
+            return 2
+        elif frq < 4000:
+            return 3
+        elif frq >= 4000 and frq <= 20000:
+            level = int((frq - 4000) // 1000)
+            return 4 + level
+        return None
+
 
 #----------------------------------------------------------------------
 # 
