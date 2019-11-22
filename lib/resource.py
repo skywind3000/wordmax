@@ -280,6 +280,29 @@ class ToolBox (object):
             return 4 + level
         return None
 
+    def save_list (self, filename, words):
+        if isinstance(words, dict):
+            input = []
+            for word in words:
+                input.append((word, words[word]))
+            words = input
+        with open(filename, 'w') as fp:
+            count = 0
+            for item in words:
+                if isinstance(item, str):
+                    word = item
+                    fp.write('%s\n'%word)
+                elif isinstance(item, list) or isinstance(item, tuple):
+                    part = [ str(n) for n in item ]
+                    if len(part) < 1:
+                        continue
+                    fp.write((', '.join(part)) + '\n')
+                count += 1
+                if count >= 10:
+                    count = 0
+                    fp.write('\n')
+        return 0
+
 
 #----------------------------------------------------------------------
 # 
