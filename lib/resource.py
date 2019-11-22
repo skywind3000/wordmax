@@ -81,6 +81,7 @@ class LocalData (object):
     def __init__ (self):
         self._bank = None
         self._skip = None
+        self._todo = None
         self._init_dirs()
 
     def _safe_mkdir (self, dir):
@@ -110,12 +111,28 @@ class LocalData (object):
                     fn = os.path.join(base, fn)
                     self._skip.load(fn)
         return self._skip
+
+    def todo (self):
+        if self._todo is None:
+            base = ccinit.path_data('todo')
+            self._todo = wordkit.WordBook()
+            for fn in os.listdir(base):
+                if os.path.splitext(fn)[-1].lower() == '.txt':
+                    fn = os.path.join(base, fn)
+                    self._todo.load(fn)
+        return self._todo
             
     def skip_simple (self, word):
         if "'" in word:
             return True
         skip = self.skip()
         return skip.check(word)
+
+    def skip_todo (self, word):
+        if "'" in word:
+            return True
+        todo = self.todo()
+        return todo.check(word)
 
     def bank_query (self, word):
         bank = self.bank()
